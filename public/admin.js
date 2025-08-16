@@ -1,88 +1,72 @@
 document.addEventListener('DOMContentLoaded', () => {
   const formContainer = document.getElementById('adminFormContainer');
+  const dashboard = document.getElementById('dashboard');
 
-  async function checkAdmin() {
-    try {
-      const res = await fetch('/bookings', { method: 'GET', credentials: 'include' });
-      if (res.status === 401) {
-        // Admin not logged in, show login form
-        showLoginForm(false);
-      } else {
-        // Already logged in, redirect to dashboard
-        window.location.href = '/admin';
-      }
-    } catch (err) {
-      console.error('Error checking admin:', err);
-    }
+  async function showDashboard() {
+    formContainer.style.display = 'none';
+    dashboard.style.display = 'block';
+    loadBookings();
   }
 
-  function showLoginForm(firstTime) {
-    formContainer.innerHTML = '';
+  async function loadBookings() {
+    try {
+      const res = await fetch('/bookings', { credentials: 'include' });
+      const bookings = await res.json();
+      const tbody = document.querySelector('#bookingsTable tbody');
+      tbody.innerHTML = '';
+      bookings.forEach(b=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${b.id}</td><td>${b.name}</td><td>${b.email}</td><td>${b.phone}</td>
+          <td>${b.vehicle_reg}</td><td>${b.date}</td><td>${b.time_slot}</td><td>${b.bay}</td>
+          <td>${b.garageId}</td><td>${b.status}</td>
+          <td><button onclick="cancelBooking(${b.id})">Cancel</button></td>`;
+        tbody.appendChild(tr);
+      });
+    } catch(err){ console.error(err); }
+  }
+
+  window.cancelBooking = async (id)=>{
+    if(!confirm('Cancel this booking?')) return;
+    try{
+      const res = await fetch(`/bookings/${id}`, { method:'DELETE', credentials:'include' });
+      const data = await res.json();
+      if(res.ok) loadBookings();
+      else alert(data.error);
+    } catch(err){ alert(err.message); }
+  };
+
+  async function isFirstTime(){
+    try {
+      const test = await fetch('/admin/login',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({})});
+      if(test.status===400) showLoginForm(true);
+      else showLoginForm(false);
+    } catch(err){ showLoginForm(false); }
+  }
+
+  function showLoginForm(firstTime){
+    formContainer.innerHTML='';
     const title = document.createElement('h2');
     title.innerText = firstTime ? 'Set Admin Password' : 'Admin Login';
     formContainer.appendChild(title);
 
     const form = document.createElement('form');
-    form.id = 'adminForm';
-    form.innerHTML = `
-      <input type="password" id="password" placeholder="${firstTime ? 'Set password' : 'Password'}" required>
-      <button type="submit">${firstTime ? 'Set Password' : 'Login'}</button>
-    `;
+    form.id='adminForm';
+    form.innerHTML=`<input type="password" id="password" placeholder="${firstTime?'Set password':'Password'}" required>
+      <button type="submit">${firstTime?'Set Password':'Login'}</button>`;
     formContainer.appendChild(form);
 
-    form.addEventListener('submit', async (e) => {
+    form.addEventListener('submit', async e=>{
       e.preventDefault();
-      const pwd = document.getElementById('password').value.trim();
-      if (!pwd) return alert('Password required');
-
-      try {
-        const payload = firstTime ? { setPassword: pwd } : { password: pwd };
-        const res = await fetch('/admin/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          credentials: 'include'
-        });
-
+      const pwd=document.getElementById('password').value.trim();
+      if(!pwd) return alert('Password required');
+      try{
+        const payload = firstTime? {setPassword:pwd}:{password:pwd};
+        const res = await fetch('/admin/login',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload), credentials:'include' });
         const data = await res.json();
-        if (res.ok) {
-          alert(data.message || 'Login successful!');
-          window.location.href = '/admin';
-        } else {
-          alert(data.error || 'Error logging in');
-        }
-      } catch (err) {
-        alert('Error: ' + err.message);
-      }
+        if(res.ok) showDashboard();
+        else alert(data.error);
+      } catch(err){ alert(err.message); }
     });
-  }
-
-  // First, check if admin exists
-  async function isFirstTime() {
-    try {
-      const res = await fetch('/bookings', { method: 'GET', credentials: 'include' });
-      if (res.status === 401) {
-        // 401 could be first-time setup or just not logged in
-        // We try posting empty password to detect first-time
-        const test = await fetch('/admin/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({}),
-          credentials: 'include'
-        });
-        if (test.status === 400) {
-          // No admin exists, first-time setup
-          showLoginForm(true);
-        } else {
-          showLoginForm(false);
-        }
-      } else {
-        window.location.href = '/admin';
-      }
-    } catch (err) {
-      console.error(err);
-      showLoginForm(false);
-    }
   }
 
   isFirstTime();
