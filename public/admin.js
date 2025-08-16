@@ -2,49 +2,37 @@ document.addEventListener('DOMContentLoaded', async () => {
   const formContainer = document.getElementById('adminFormContainer');
   const dashboard = document.getElementById('dashboard');
 
-  // Show dashboard
   function showDashboard() {
     formContainer.style.display = 'none';
     dashboard.style.display = 'block';
     loadBookings();
   }
 
-  // Placeholder for bookings load
   async function loadBookings() {
-    // Your existing code to fetch and populate bookings
+    // Your existing code to fetch bookings
   }
 
-  // Check if already logged in
   async function checkLoginStatus() {
     try {
       const res = await fetch('/admin/status', { credentials: 'include' });
       const data = await res.json();
       if (data.loggedIn) showDashboard();
       else checkFirstRun();
-    } catch (err) {
-      checkFirstRun();
-    }
+    } catch { checkFirstRun(); }
   }
 
-  // Check if first-run setup required
   async function checkFirstRun() {
     try {
-      // Call login endpoint with empty body to detect first-run
       const res = await fetch('/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({})
       });
-
-      // 400 = first-run required
       if (res.status === 400) showLoginForm(true);
       else showLoginForm(false);
-    } catch (err) {
-      showLoginForm(false);
-    }
+    } catch { showLoginForm(false); }
   }
 
-  // Show login / first-run form
   function showLoginForm(firstTime) {
     formContainer.innerHTML = '';
     const title = document.createElement('h2');
@@ -53,26 +41,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const form = document.createElement('form');
     form.id = 'adminForm';
-
     form.innerHTML = `
       <input type="email" id="email" placeholder="Email" required>
       <input type="password" id="password" placeholder="Password" required>
       <button type="submit">${firstTime ? 'Set Account' : 'Login'}</button>
     `;
-
     formContainer.appendChild(form);
 
     form.addEventListener('submit', async e => {
       e.preventDefault();
       const email = document.getElementById('email').value.trim();
       const pwd = document.getElementById('password').value.trim();
-
       if (!email || !pwd) return alert('Email and password required');
 
-      const payload = firstTime
-        ? { setEmail: email, setPassword: pwd }
-        : { email: email, password: pwd };
-
+      const payload = firstTime ? { setEmail: email, setPassword: pwd } : { email, password: pwd };
       try {
         const res = await fetch('/admin/login', {
           method: 'POST',
@@ -80,7 +62,6 @@ document.addEventListener('DOMContentLoaded', async () => {
           body: JSON.stringify(payload),
           credentials: 'include'
         });
-
         const data = await res.json();
         if (data.success) showDashboard();
         else alert(data.error || 'Login failed');
@@ -89,6 +70,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
   }
+
+  // Logout button handler
+  const logoutBtn = document.getElementById('logoutBtn');
+  logoutBtn?.addEventListener('click', async () => {
+    try {
+      const res = await fetch('/admin/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (data.success) {
+        dashboard.style.display = 'none';
+        formContainer.style.display = 'block';
+      } else alert(data.error || 'Logout failed');
+    } catch(err) {
+      alert('Logout failed: ' + err.message);
+    }
+  });
 
   checkLoginStatus();
 });
