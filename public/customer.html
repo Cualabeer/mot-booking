@@ -1,1 +1,36 @@
-<!DOCTYPE html><html><body><h1>Customer Page</h1></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MOT Booking</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<h1>MOT Booking</h1>
+<form id="bookingForm">
+  <label>Name: <input type="text" name="name" required></label><br>
+  <label>Email: <input type="email" name="email" required></label><br>
+  <label>Phone: <input type="text" name="phone" required></label><br>
+  <label>Vehicle Reg: <input type="text" name="vehicle_reg" required></label><br>
+  <label>Date: <input type="date" name="date" required></label><br>
+  <label>Time Slot: <input type="time" name="time_slot" required></label><br>
+  <label>Garage:
+    <select name="garageId">
+      <option value="1">Main MOT Garage</option>
+    </select>
+  </label><br>
+  <button type="submit">Book MOT</button>
+</form>
+<div id="result"></div>
+<script>
+document.getElementById('bookingForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const form = e.target;
+  const data = Object.fromEntries(new FormData(form).entries());
+  const res = await fetch('/book', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+  const json = await res.json();
+  document.getElementById('result').textContent = JSON.stringify(json);
+});
+</script>
+</body>
+</html>

@@ -1,1 +1,21 @@
-<!DOCTYPE html><html><body><h1>Admin Page</h1></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Dashboard</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<h1>Admin Dashboard</h1>
+<div id="loginDiv">
+  <label>Password: <input type="password" id="adminPassword"></label>
+  <button id="loginBtn">Login</button>
+</div>
+<div id="dashboard" style="display:none;">
+  <h2>Bookings</h2>
+  <button id="refreshBtn">Refresh</button>
+  <ul id="bookingsList"></ul>
+</div>
+<script src="admin.js"></script>
+</body>
+</html>
