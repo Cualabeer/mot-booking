@@ -7,52 +7,97 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>MOT Booking Form</h1>
-  <form id="bookingForm">
-    <input type="text" id="name" placeholder="Full Name" required>
-    <input type="email" id="email" placeholder="Email" required>
-    <input type="text" id="phone" placeholder="Phone" required>
-    <input type="text" id="vehicle_reg" placeholder="Vehicle Registration" required>
-    <input type="date" id="date" required>
-    <input type="time" id="time_slot" required>
-    <select id="garageId" required>
-      <option value="1">Main MOT Garage</option>
-      <!-- Add more garages if needed -->
-    </select>
-    <button type="submit">Book MOT</button>
-  </form>
+  <h1>Book Your MOT</h1>
 
-  <div id="response"></div>
+  <div id="bookingFormContainer">
+    <form id="bookingForm">
+      <input type="text" id="name" placeholder="Full Name" required>
+      <input type="email" id="email" placeholder="Email" required>
+      <input type="text" id="phone" placeholder="Phone Number" required>
+      <input type="text" id="vehicle" placeholder="Vehicle Registration" required>
+      <input type="date" id="date" required>
+      <input type="time" id="time" required>
+      <select id="garage" required>
+        <option value="">Select Garage</option>
+      </select>
+      <select id="bay" required>
+        <option value="">Select Bay</option>
+      </select>
+      <button type="submit">Book MOT</button>
+    </form>
+
+    <div id="bookingSuccess">Booking successful! Thank you.</div>
+  </div>
 
   <script>
-    document.getElementById('bookingForm').addEventListener('submit', async e => {
-      e.preventDefault();
-      const data = {
-        name: document.getElementById('name').value,
-        email: document.getElementById('email').value,
-        phone: document.getElementById('phone').value,
-        vehicle_reg: document.getElementById('vehicle_reg').value,
-        date: document.getElementById('date').value,
-        time_slot: document.getElementById('time_slot').value,
-        garageId: parseInt(document.getElementById('garageId').value)
-      };
+    document.addEventListener('DOMContentLoaded', async () => {
+      const form = document.getElementById('bookingForm');
+      const successMsg = document.getElementById('bookingSuccess');
+      const garageSelect = document.getElementById('garage');
+      const baySelect = document.getElementById('bay');
 
-      try {
-        const res = await fetch('/book', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
-        const result = await res.json();
-        if(res.ok) {
-          document.getElementById('response').innerText = `Booking successful! Bay: ${result.bay}, Booking ID: ${result.id}`;
-          document.getElementById('bookingForm').reset();
-        } else {
-          document.getElementById('response').innerText = result.error || 'Error booking';
-        }
-      } catch(err) {
-        document.getElementById('response').innerText = 'Error: ' + err.message;
+      // Load garages and bays
+      async function loadGarages() {
+        try {
+          const res = await fetch('/garages');
+          const garages = await res.json();
+          garages.forEach(g => {
+            const option = document.createElement('option');
+            option.value = g.id;
+            option.textContent = g.name;
+            garageSelect.appendChild(option);
+          });
+        } catch(err){ console.error(err); }
       }
+
+      garageSelect.addEventListener('change', async () => {
+        const garageId = garageSelect.value;
+        baySelect.innerHTML = '<option value="">Select Bay</option>';
+        if (!garageId) return;
+        try {
+          const res = await fetch(`/garages/${garageId}/bays`);
+          const bays = await res.json();
+          bays.forEach(b => {
+            const option = document.createElement('option');
+            option.value = b.id;
+            option.textContent = b.name;
+            baySelect.appendChild(option);
+          });
+        } catch(err){ console.error(err); }
+      });
+
+      form.addEventListener('submit', async e => {
+        e.preventDefault();
+        const data = {
+          name: document.getElementById('name').value.trim(),
+          email: document.getElementById('email').value.trim(),
+          phone: document.getElementById('phone').value.trim(),
+          vehicle_reg: document.getElementById('vehicle').value.trim(),
+          date: document.getElementById('date').value,
+          time_slot: document.getElementById('time').value,
+          garageId: garageSelect.value,
+          bay: baySelect.value
+        };
+        try {
+          const res = await fetch('/bookings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+          const result = await res.json();
+          if(res.ok){
+            successMsg.style.display = 'block';
+            form.reset();
+            baySelect.innerHTML = '<option value="">Select Bay</option>';
+          } else {
+            alert(result.error || 'Booking failed');
+          }
+        } catch(err){
+          alert(err.message);
+        }
+      });
+
+      loadGarages();
     });
   </script>
 </body>
