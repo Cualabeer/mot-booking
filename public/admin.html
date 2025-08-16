@@ -9,12 +9,15 @@
 <body>
   <h1>MOT Admin Dashboard</h1>
 
-  <!-- Form container for first-run or login -->
+  <!-- Container for login / first-run setup -->
   <div id="adminFormContainer"></div>
 
   <!-- Dashboard shown after login -->
   <div id="dashboard" style="display:none;">
-    <h2>Bookings</h2>
+    <div style="display:flex; justify-content: space-between; align-items: center;">
+      <h2>Bookings</h2>
+      <button id="logoutBtn">Logout</button>
+    </div>
     <table id="bookingsTable" border="1">
       <thead>
         <tr>
@@ -36,5 +39,18 @@
   </div>
 
   <script src="admin.js"></script>
+  <script>
+    // Logout handler
+    document.addEventListener('DOMContentLoaded', () => {
+      const logoutBtn = document.getElementById('logoutBtn');
+      logoutBtn?.addEventListener('click', async () => {
+        try {
+          const res = await fetch('/admin/logout', { method: 'POST', credentials: 'include' });
+          const data = await res.json();
+          if (data.success) location.reload();
+        } catch(err) { alert('Logout failed'); }
+      });
+    });
+  </script>
 </body>
 </html>
