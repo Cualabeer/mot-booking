@@ -1,36 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>MOT Booking</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MOT Booking</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<h1>MOT Booking</h1>
-<form id="bookingForm">
-  <label>Name: <input type="text" name="name" required></label><br>
-  <label>Email: <input type="email" name="email" required></label><br>
-  <label>Phone: <input type="text" name="phone" required></label><br>
-  <label>Vehicle Reg: <input type="text" name="vehicle_reg" required></label><br>
-  <label>Date: <input type="date" name="date" required></label><br>
-  <label>Time Slot: <input type="time" name="time_slot" required></label><br>
-  <label>Garage:
-    <select name="garageId">
+  <h1>MOT Booking Form</h1>
+  <form id="bookingForm">
+    <input type="text" id="name" placeholder="Full Name" required>
+    <input type="email" id="email" placeholder="Email" required>
+    <input type="text" id="phone" placeholder="Phone" required>
+    <input type="text" id="vehicle_reg" placeholder="Vehicle Registration" required>
+    <input type="date" id="date" required>
+    <input type="time" id="time_slot" required>
+    <select id="garageId" required>
       <option value="1">Main MOT Garage</option>
+      <!-- Add more garages if needed -->
     </select>
-  </label><br>
-  <button type="submit">Book MOT</button>
-</form>
-<div id="result"></div>
-<script>
-document.getElementById('bookingForm').addEventListener('submit', async e=>{
-  e.preventDefault();
-  const form = e.target;
-  const data = Object.fromEntries(new FormData(form).entries());
-  const res = await fetch('/book', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
-  const json = await res.json();
-  document.getElementById('result').textContent = JSON.stringify(json);
-});
-</script>
+    <button type="submit">Book MOT</button>
+  </form>
+
+  <div id="response"></div>
+
+  <script>
+    document.getElementById('bookingForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const data = {
+        name: document.getElementById('name').value,
+        email: document.getElementById('email').value,
+        phone: document.getElementById('phone').value,
+        vehicle_reg: document.getElementById('vehicle_reg').value,
+        date: document.getElementById('date').value,
+        time_slot: document.getElementById('time_slot').value,
+        garageId: parseInt(document.getElementById('garageId').value)
+      };
+
+      try {
+        const res = await fetch('/book', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if(res.ok) {
+          document.getElementById('response').innerText = `Booking successful! Bay: ${result.bay}, Booking ID: ${result.id}`;
+          document.getElementById('bookingForm').reset();
+        } else {
+          document.getElementById('response').innerText = result.error || 'Error booking';
+        }
+      } catch(err) {
+        document.getElementById('response').innerText = 'Error: ' + err.message;
+      }
+    });
+  </script>
 </body>
 </html>
